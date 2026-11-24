@@ -1,6 +1,7 @@
 
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -300,10 +301,13 @@ export default function CompleteProfilePage() {
         <section className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-green-900/5 p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-6">
             {user?.photoURL ? (
-              <img
+              <Image
                 src={user.photoURL}
                 alt="Your Google profile"
+                width={48}
+                height={48}
                 className="h-12 w-12 rounded-full object-cover"
+                referrerPolicy="no-referrer"
               />
             ) : (
               <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg">

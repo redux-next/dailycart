@@ -101,8 +101,6 @@ export default function LiveDeliveryMap({
 
   useEffect(() => {
     if (!orderId) {
-      setLocationLoading(false);
-      setLocationError("Invalid order.");
       return;
     }
 
@@ -146,6 +144,12 @@ export default function LiveDeliveryMap({
   }, [orderId]);
 
   const courier = deliveryLocation?.coordinates || null;
+  const effectiveLocationLoading = orderId
+    ? locationLoading
+    : false;
+  const effectiveLocationError = orderId
+    ? locationError
+    : "Invalid order.";
 
   const mapCenter =
     courier ||
@@ -160,7 +164,7 @@ export default function LiveDeliveryMap({
             Live delivery tracking
           </h2>
           <p className="text-xs text-gray-500 mt-1">
-            Follow your delivery person's location.
+            Follow your delivery person&apos;s location.
           </p>
         </div>
 
@@ -236,7 +240,7 @@ export default function LiveDeliveryMap({
         {!courier && (
           <div className="absolute inset-x-3 bottom-3 z-[500] bg-white/95 backdrop-blur rounded-xl p-3 shadow-md pointer-events-none">
             <p className="text-xs font-bold text-gray-800">
-              {locationLoading
+              {effectiveLocationLoading
                 ? "Connecting to delivery tracking..."
                 : "Waiting for delivery person"}
             </p>
@@ -251,7 +255,7 @@ export default function LiveDeliveryMap({
         <span className="w-3 h-3 rounded-full bg-green-600 mt-1 shrink-0" />
         <div className="min-w-0">
           <p className="text-xs font-semibold text-gray-800">
-            Delivery person's location
+            Delivery person&apos;s location
           </p>
           <p className="text-[11px] text-gray-500 mt-1">
             {deliveryLocation
@@ -266,9 +270,9 @@ export default function LiveDeliveryMap({
             </p>
           )}
 
-          {locationError && (
+          {effectiveLocationError && (
             <p className="text-[11px] text-red-600 mt-1">
-              {locationError}
+              {effectiveLocationError}
             </p>
           )}
 

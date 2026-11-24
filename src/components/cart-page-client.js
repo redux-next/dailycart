@@ -141,7 +141,7 @@ export default function CartPageClient() {
             <div className="text-3xl sm:text-4xl">⚠️</div>
 
             <h2 className="mt-3 font-bold text-red-700 sm:mt-4">
-              Couldn't load your products
+              Couldn&apos;t load your products
             </h2>
 
             <p className="mt-2 text-xs text-gray-500 sm:text-sm">
@@ -166,7 +166,7 @@ export default function CartPageClient() {
             </h2>
 
             <p className="mx-auto mt-2 max-w-sm text-xs leading-6 text-gray-500 sm:mt-3 sm:text-sm">
-              Looks like you haven't added anything yet.
+              Looks like you haven&apos;t added anything yet.
               Discover fresh groceries and everyday essentials.
             </p>
 

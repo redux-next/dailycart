@@ -19,8 +19,33 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "DailyCart",
-  description: "Fresh groceries delivered to your doorstep.",
+  metadataBase: new URL("https://dailycart.in"),
+  title: {
+    default: "DailyCart - Groceries & Essentials",
+    template: "%s | DailyCart",
+  },
+  description:
+    "Shop groceries and everyday essentials with DailyCart in Chabua Town.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: "https://dailycart.in",
+    siteName: "DailyCart",
+    title: "DailyCart - Groceries & Everyday Essentials",
+    description:
+      "Groceries and everyday essentials delivered within the Chabua Town service area.",
+    images: [
+      {
+        url: "/dailycart-logo.png",
+        width: 1200,
+        height: 630,
+        alt: "DailyCart",
+      },
+    ],
+  },
   icons: {
     icon: "/dailycart_icon.png",
     shortcut: "/dailycart_icon.png",

@@ -89,11 +89,6 @@ export function CartProvider({ children }) {
   useEffect(() => {
     let active = true;
 
-    setCart({});
-    setCartOwner(null);
-    setIsLoaded(false);
-    setSyncError("");
-
     if (authLoading) {
       return () => {
         active = false;
@@ -120,6 +115,7 @@ export function CartProvider({ children }) {
           setCart(validateCart(result.cart));
           setCartOwner(user.uid);
           setIsLoaded(true);
+          setSyncError("");
           return;
         } catch (error) {
           console.error("Unable to load the account cart:", error);
@@ -155,6 +151,7 @@ export function CartProvider({ children }) {
         setCart(guestCart);
         setCartOwner("guest");
         setIsLoaded(true);
+        setSyncError("");
       } catch (error) {
         console.error("Unable to load the guest cart:", error);
 
@@ -175,12 +172,12 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     const owner = user?.uid || "guest";
+    const effectiveLoaded =
+      isLoaded &&
+      cartOwner === owner &&
+      !authLoading;
 
-    if (
-      !isLoaded ||
-      authLoading ||
-      cartOwner !== owner
-    ) {
+    if (!effectiveLoaded) {
       return;
     }
 
@@ -190,10 +187,12 @@ export function CartProvider({ children }) {
           guestCartStorageKey,
           JSON.stringify(cart)
         );
-        setSyncError("");
+        window.queueMicrotask(() => setSyncError(""));
       } catch (error) {
         console.error("Unable to save the guest cart:", error);
-        setSyncError("Unable to save your cart. Please retry.");
+        window.queueMicrotask(() =>
+          setSyncError("Unable to save your cart. Please retry.")
+        );
       }
 
       return;
@@ -280,13 +279,31 @@ export function CartProvider({ children }) {
   }, [isLoaded]);
 
   const value = useMemo(
-    () => ({
+    () => {
+      const effectiveOwner = user?.uid || "guest";
+      const effectiveCart =
+        !authLoading && isLoaded && cartOwner === effectiveOwner
+          ? cart
+          : {};
+      const effectiveIsLoaded =
+        !authLoading && isLoaded && cartOwner === effectiveOwner;
+
+      return {
+        cart: effectiveCart,
+        changeQuantity,
+        clearCart,
+        isLoaded: effectiveIsLoaded,
+      };
+    },
+    [
       cart,
+      cartOwner,
+      authLoading,
+      isLoaded,
+      user,
       changeQuantity,
       clearCart,
-      isLoaded,
-    }),
-    [cart, changeQuantity, clearCart, isLoaded]
+    ]
   );
 
   return (

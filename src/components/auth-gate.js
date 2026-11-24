@@ -16,6 +16,21 @@ export default function AuthGate({ children }) {
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [allowed, setAllowed] = useState(false);
 
+  const publicRoutes = [
+    "/",
+    "/privacy-policy",
+    "/delete-account",
+    "/contact",
+    "/terms",
+    "/terms-and-conditions",
+    "/about",
+    "/help",
+    "/faqs",
+    "/return-refund-policy",
+    "/shipping-delivery-policy",
+  ];
+  const isPublicRoute = publicRoutes.includes(pathname);
+
   useEffect(() => {
     let active = true;
 
@@ -24,11 +39,17 @@ export default function AuthGate({ children }) {
 
       if (loading) return;
 
+      if (isPublicRoute) {
+        setCheckingProfile(false);
+        setAllowed(true);
+        return;
+      }
+
       if (!user) {
         if (active) {
           setCheckingProfile(false);
 
-          if (pathname === "/login") {
+          if (pathname === "/login" || isPublicRoute) {
             setAllowed(true);
           } else {
             router.replace("/login");
@@ -97,7 +118,7 @@ export default function AuthGate({ children }) {
     return () => {
       active = false;
     };
-  }, [user, loading, pathname, router]);
+  }, [user, loading, pathname, router, isPublicRoute]);
 
   if (loading || checkingProfile || !allowed) {
     if (pathname === "/") {

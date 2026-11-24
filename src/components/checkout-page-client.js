@@ -197,12 +197,8 @@ export default function CheckoutPageClient() {
 
   // COD is allowed only when total is strictly above ₹100.
   const codAvailable = total > 100;
-
-  useEffect(() => {
-    if (!codAvailable && paymentMethod === "cod") {
-      setPaymentMethod("upi");
-    }
-  }, [codAvailable, paymentMethod]);
+  const effectivePaymentMethod =
+    codAvailable && paymentMethod === "cod" ? "cod" : "upi";
 
   const isLoading =
     authLoading ||
@@ -230,7 +226,7 @@ export default function CheckoutPageClient() {
       return;
     }
 
-    if (paymentMethod !== "cod") {
+    if (effectivePaymentMethod !== "cod") {
       setOrderError(
         "UPI payments are not activated yet. Please select Cash on Delivery."
       );
@@ -257,7 +253,7 @@ export default function CheckoutPageClient() {
       const checkoutAttempt = getCheckoutAttempt(
         user.uid,
         cart,
-        paymentMethod
+        effectivePaymentMethod
       );
       const idToken = await user.getIdToken();
 
@@ -270,7 +266,7 @@ export default function CheckoutPageClient() {
         },
         body: JSON.stringify({
           cart,
-          paymentMethod,
+          paymentMethod: effectivePaymentMethod,
         }),
       });
 
@@ -509,7 +505,7 @@ export default function CheckoutPageClient() {
                     setOrderError("");
                   }}
                   className={`w-full text-left rounded-xl border-2 p-3 sm:p-4 transition ${
-                    paymentMethod === "upi"
+                    effectivePaymentMethod === "upi"
                       ? "border-green-600 bg-green-50"
                       : "border-gray-100 hover:border-gray-300"
                   }`}
@@ -531,12 +527,12 @@ export default function CheckoutPageClient() {
 
                     <span
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        paymentMethod === "upi"
+                        effectivePaymentMethod === "upi"
                           ? "border-green-600"
                           : "border-gray-300"
                       }`}
                     >
-                      {paymentMethod === "upi" && (
+                      {effectivePaymentMethod === "upi" && (
                         <span className="w-2.5 h-2.5 rounded-full bg-green-600" />
                       )}
                     </span>
@@ -554,7 +550,7 @@ export default function CheckoutPageClient() {
                   className={`w-full text-left rounded-xl border-2 p-3 sm:p-4 transition ${
                     !codAvailable
                       ? "border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed"
-                      : paymentMethod === "cod"
+                      : effectivePaymentMethod === "cod"
                       ? "border-green-600 bg-green-50"
                       : "border-gray-100 hover:border-gray-300"
                   }`}
@@ -578,12 +574,12 @@ export default function CheckoutPageClient() {
 
                     <span
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        paymentMethod === "cod"
+                        effectivePaymentMethod === "cod"
                           ? "border-green-600"
                           : "border-gray-300"
                       }`}
                     >
-                      {paymentMethod === "cod" && (
+                      {effectivePaymentMethod === "cod" && (
                         <span className="w-2.5 h-2.5 rounded-full bg-green-600" />
                       )}
                     </span>
@@ -591,13 +587,13 @@ export default function CheckoutPageClient() {
                 </button>
               </div>
 
-              {paymentMethod === "upi" && (
+              {effectivePaymentMethod === "upi" && (
                 <p className="mt-3 sm:mt-4 text-[10px] sm:text-xs text-gray-500 bg-gray-50 rounded-xl p-3">
                   UPI payment will be activated after payment gateway integration.
                 </p>
               )}
 
-              {paymentMethod === "cod" && (
+              {effectivePaymentMethod === "cod" && (
                 <p className="mt-3 sm:mt-4 text-[10px] sm:text-xs text-gray-500 bg-gray-50 rounded-xl p-3">
                   You will pay in cash when your order is delivered.
                   COD availability is also verified by the server.
@@ -734,7 +730,7 @@ export default function CheckoutPageClient() {
               </p>
 
               <p className="text-sm font-bold text-gray-900 mt-1">
-                {paymentMethod === "upi"
+                {effectivePaymentMethod === "upi"
                   ? "UPI"
                   : "Cash on Delivery"}
               </p>
@@ -756,12 +752,12 @@ export default function CheckoutPageClient() {
               onClick={handlePlaceOrder}
               disabled={
                 !canCheckout ||
-                paymentMethod !== "cod" ||
+                effectivePaymentMethod !== "cod" ||
                 placingOrder
               }
               className={`w-full mt-4 sm:mt-5 rounded-xl font-bold py-3.5 text-sm transition ${
                 canCheckout &&
-                paymentMethod === "cod" &&
+                effectivePaymentMethod === "cod" &&
                 !placingOrder
                   ? "bg-green-600 hover:bg-green-700 text-white"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
@@ -769,7 +765,7 @@ export default function CheckoutPageClient() {
             >
               {placingOrder
                 ? "Placing your order..."
-                : paymentMethod !== "cod"
+                : effectivePaymentMethod !== "cod"
                 ? "Select Cash on Delivery"
                 : "Place order"}
             </button>

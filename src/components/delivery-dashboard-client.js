@@ -302,7 +302,11 @@ export default function DeliveryDashboardClient() {
 
   useEffect(() => {
     if (accessState === "allowed" && user) {
-      loadOrders();
+      const timerId = window.setTimeout(() => {
+        loadOrders();
+      }, 0);
+
+      return () => window.clearTimeout(timerId);
     }
   }, [accessState, user, loadOrders]);
 
@@ -1070,7 +1074,7 @@ export default function DeliveryDashboardClient() {
                   </p>
 
                   <p className="mt-1 text-sm text-amber-800">
-                    The order's payment method is not recognized as Cash on
+                    The order&apos;s payment method is not recognized as Cash on
                     Delivery. Check the detected payment method above.
                   </p>
                 </div>

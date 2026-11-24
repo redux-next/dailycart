@@ -81,8 +81,21 @@ export default function MobileBottomNav() {
     pathname?.startsWith("/track-order/");
   const isProfileActive =
     pathname === "/profile" || pathname?.startsWith("/profile/");
+  const publicRoutes = [
+    "/privacy-policy",
+    "/delete-account",
+    "/contact",
+    "/terms",
+    "/terms-and-conditions",
+    "/about",
+    "/help",
+    "/faqs",
+    "/return-refund-policy",
+    "/shipping-delivery-policy",
+  ];
 
   if (
+    publicRoutes.includes(pathname) ||
     !visibleRoutes.includes(pathname) &&
     !pathname?.startsWith("/products/") &&
     !isProfileActive &&

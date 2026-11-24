@@ -133,12 +133,8 @@ export default function OrderTrackingClient({ orderId }) {
     }
 
     if (!orderId) {
-      setError("Invalid order ID.");
-      setLoading(false);
       return;
     }
-
-    setLoading(true);
 
     const unsubscribe = onSnapshot(
       doc(db, "orders", orderId),
@@ -181,7 +177,11 @@ export default function OrderTrackingClient({ orderId }) {
     return () => unsubscribe();
   }, [user, authLoading, orderId, router]);
 
-  if (authLoading || loading) {
+  const trackingError = !orderId
+    ? "Invalid order ID."
+    : error;
+
+  if (authLoading || (loading && orderId)) {
     return (
       <main className="min-h-screen bg-[#f7f8f5] flex items-center justify-center p-4">
         <div className="text-center">
@@ -197,7 +197,7 @@ export default function OrderTrackingClient({ orderId }) {
 
   if (!user) return null;
 
-  if (error || !order) {
+  if (trackingError || !order) {
     return (
       <main className="min-h-screen bg-[#f7f8f5] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center border border-gray-100">
@@ -206,7 +206,7 @@ export default function OrderTrackingClient({ orderId }) {
           </h1>
 
           <p className="text-sm text-gray-500 mt-2">
-            {error || "Order not found."}
+            {trackingError || "Order not found."}
           </p>
 
           <Link
