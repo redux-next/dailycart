@@ -16,6 +16,7 @@ import DeleteAccountButton from "../components/delete-account-button";
 import LoadingImage from "../components/loading-image";
 import StorefrontLoading from "../components/storefront-loading";
 import { useCatalog } from "../hooks/use-catalog";
+import { PublicFooter } from "../components/public-site-chrome";
 
 function Icon({ name, size = 20 }) {
   const shared = {
@@ -218,7 +219,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [user?.uid]);
+  }, [user]);
 
   // Load the customer's saved Firestore profile.
   useEffect(() => {
@@ -363,7 +364,7 @@ export default function Home() {
 
   return (
     <main className="storefront">
-      <div className="announcement">
+      <div className="announcement hidden sm:flex">
         <span className="announcement-sparkle">✳</span>
         A little less waiting, a lot more living.
 <span className="announcement-right">
@@ -453,13 +454,13 @@ export default function Home() {
               }}
             >
               {user.photoURL ? (
-                <img
+                <Image
                   src={user.photoURL}
                   alt=""
+                  width={42}
+                  height={42}
                   referrerPolicy="no-referrer"
                   style={{
-                    width: "42px",
-                    height: "42px",
                     borderRadius: "50%",
                     objectFit: "cover",
                   }}
@@ -709,7 +710,7 @@ export default function Home() {
         </section>
 
         <section
-          className="promise-row"
+          className="promise-row hidden sm:flex"
           aria-label="Delivery highlights"
         >
           <div className="promise">
@@ -835,7 +836,7 @@ export default function Home() {
             ) : catalogError ? (
               <div className="empty-search">
                 <span>⚠️</span>
-                <h3>Couldn't load products</h3>
+                <h3>Couldn&apos;t load products</h3>
                 <p>{catalogError}</p>
 
                 <button
@@ -1118,19 +1119,9 @@ export default function Home() {
           </aside>
         </div>
 
-        <footer className="site-footer">
-          <a className="footer-brand" href="#top">
-            DailyCart<span>.</span>
-          </a>
-
-          <span>Good things, delivered within 10 km of Chabua Town.</span>
-
-          <span className="footer-right">
-            Made for your neighbourhood <span>✳</span>
-          </span>
-        </footer>
       </div>
 
+      <PublicFooter />
     </main>
   );
 }

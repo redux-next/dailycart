@@ -110,6 +110,27 @@ body {
   opacity: 0.6;
 }
 
+.home-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 18px;
+  color: #536158;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-footer-links a {
+  text-decoration: none;
+}
+
+.home-footer-links a:hover,
+.home-footer-links a:focus-visible {
+  color: #176344;
+  text-decoration: underline;
+}
+
 .cart-sync-notice {
   position: fixed;
   z-index: 1100;
@@ -1804,6 +1825,12 @@ input:focus-visible {
 }
 
 @media (max-width: 700px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   .app-content:has(+ .mobile-bottom-nav) {
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
