@@ -12,11 +12,11 @@ export function PublicHeader({ active = "" }) {
   ];
 
   return (
-    <header className="border-b border-green-100 bg-white/95 backdrop-blur">
-      <div className="relative mx-auto flex min-h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-green-100/80 bg-white/95 shadow-sm shadow-green-950/[0.03] backdrop-blur">
+      <div className="relative mx-auto flex min-h-16 max-w-6xl items-center justify-between px-4 sm:min-h-[72px] sm:px-6">
         <Link
           href="/"
-          className="text-xl font-extrabold tracking-tight text-gray-900"
+          className="text-xl font-extrabold tracking-tight text-gray-900 transition-colors hover:text-green-800"
           aria-label="DailyCart home"
         >
           DailyCart<span className="text-green-600">.</span>
@@ -26,7 +26,7 @@ export function PublicHeader({ active = "" }) {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-semibold ${
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                 active === link.href
                   ? "text-green-700"
                   : "text-gray-600 hover:text-green-700"
@@ -38,7 +38,7 @@ export function PublicHeader({ active = "" }) {
         </nav>
         <Link
           href="/login"
-          className="hidden min-h-10 rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700 sm:inline-flex"
+          className="hidden min-h-10 rounded-xl bg-green-700 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-green-800 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 sm:inline-flex"
         >
           Sign in
         </Link>
@@ -92,9 +92,9 @@ export function PublicFooter() {
 
   return (
     <footer className="mt-8 border-t border-gray-100 bg-white sm:mt-16">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-7 sm:px-6 sm:py-10 md:grid-cols-2 lg:grid-cols-5">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-8 px-4 py-9 sm:px-6 sm:py-12 md:grid-cols-2 lg:grid-cols-5">
         <div className="col-span-2 lg:col-span-1">
-          <p className="text-xl font-extrabold text-gray-900">
+          <p className="text-xl font-extrabold tracking-tight text-gray-900">
             DailyCart<span className="text-green-600">.</span>
           </p>
           <p className="mt-2 max-w-sm text-sm leading-6 text-gray-500">
@@ -163,7 +163,7 @@ export function PublicFooter() {
           )}
         </nav>
       </div>
-      <div className="border-t border-gray-100 py-5 text-center text-xs text-gray-400">
+      <div className="border-t border-gray-100 bg-gray-50/70 py-5 text-center text-xs text-gray-500">
         &copy; {new Date().getFullYear()} DailyCart. All rights reserved.
       </div>
     </footer>

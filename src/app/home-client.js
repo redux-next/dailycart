@@ -6,7 +6,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getIdTokenResult } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 
 import { db } from "../lib/firebase";
 import { useCart } from "../components/cart-provider";
@@ -131,6 +138,22 @@ function Icon({ name, size = 20 }) {
   );
 }
 
+function formatOrderDate(timestamp) {
+  if (!timestamp) return "Placed recently";
+
+  const date =
+    typeof timestamp.toDate === "function"
+      ? timestamp.toDate()
+      : new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) return "Placed recently";
+
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
 export default function Home() {
   const router = useRouter();
 
@@ -140,6 +163,11 @@ export default function Home() {
   const [authError, setAuthError] = useState("");
   const [customerProfile, setCustomerProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [recentOrderState, setRecentOrderState] = useState({
+    userId: null,
+    orders: [],
+    error: "",
+  });
 
   // Independently verify the delivery role from Firebase.
   const [verifiedDeliveryRole, setVerifiedDeliveryRole] =
@@ -265,6 +293,61 @@ export default function Home() {
     };
   }, [user?.uid]);
 
+  useEffect(() => {
+    let active = true;
+
+    if (!user?.uid || isAdmin || isDeliveryBoy) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const ordersQuery = query(
+      collection(db, "orders"),
+      where("userId", "==", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      ordersQuery,
+      (snapshot) => {
+        if (!active) return;
+
+        const loadedOrders = snapshot.docs.map((item) => ({
+          id: item.id,
+          ...item.data(),
+        }));
+
+        loadedOrders.sort((a, b) => {
+          const dateA = a.createdAt?.toMillis?.() || 0;
+          const dateB = b.createdAt?.toMillis?.() || 0;
+          return dateB - dateA;
+        });
+
+        setRecentOrderState({
+          userId: user.uid,
+          orders: loadedOrders.slice(0, 2),
+          error: "",
+        });
+      },
+      (error) => {
+        console.error("Recent orders loading error:", error);
+
+        if (active) {
+          setRecentOrderState({
+            userId: user.uid,
+            orders: [],
+            error: "We couldn't load your recent orders. Please try again.",
+          });
+        }
+      }
+    );
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [isAdmin, isDeliveryBoy, user?.uid]);
+
   const filteredProducts = products.filter((product) => {
     const matchesCategory =
       activeCategory === "All" ||
@@ -300,6 +383,17 @@ export default function Home() {
   const handlingFee = subtotal === 0 ? 0 : 4;
 
   const total = subtotal + deliveryFee + handlingFee;
+  const customerName =
+    customerProfile?.name || user?.displayName || "";
+  const customerFirstName = customerName.trim().split(/\s+/)[0];
+  const isCustomer = Boolean(user && !isAdmin && !isDeliveryBoy);
+  const recentOrders = recentOrderState.userId === user?.uid
+    ? recentOrderState.orders
+    : [];
+  const recentOrdersLoading =
+    isCustomer && recentOrderState.userId !== user.uid;
+  const recentOrdersError =
+    recentOrderState.userId === user?.uid ? recentOrderState.error : "";
 
   async function handleGoogleSignIn() {
     try {
@@ -367,390 +461,488 @@ export default function Home() {
       <div className="announcement hidden sm:flex">
         <span className="announcement-sparkle">✳</span>
         A little less waiting, a lot more living.
-<span className="announcement-right">
-  Chabua Town · Under 10 km delivery
-</span>
+        <span className="announcement-right">
+          Chabua Town · Under 10 km delivery
+        </span>
       </div>
 
 
-<header className="site-header">
-  {/* Brand */}
-  <Link
-    className="brand"
-    href="#top"
-    aria-label="DailyCart home"
-  >
-    <div className="brand-logo-frame">
-      <Image
-        src="/dailycart-logo.png"
-        alt="DailyCart"
-        fill
-        priority
-        sizes="(max-width: 600px) 140px, 180px"
-        style={{ objectFit: "cover", objectPosition: "center" }}
-      />
-    </div>
-  </Link>
+      <header className="site-header">
+        {/* Brand */}
+        <Link
+          className="brand"
+          href="#top"
+          aria-label="DailyCart home"
+        >
+          <div className="brand-logo-frame">
+            <Image
+              src="/dailycart_login_logo.png"
+              alt="DailyCart"
+              fill
+              priority
+              sizes="(max-width: 380px) 112px, (max-width: 700px) 140px, (max-width: 1024px) 145px, 180px"
+              style={{ objectFit: "contain", objectPosition: "center" }}
+            />
+          </div>
+        </Link>
 
-  {/* Search */}
-  <form
-    className="search-box"
-    role="search"
-    onSubmit={submitSearch}
-  >
-    <Icon name="search" size={20} />
+        {/* Search */}
+        <form
+          className="search-box"
+          role="search"
+          onSubmit={submitSearch}
+        >
+          <Icon name="search" size={20} />
 
-    <input
-      type="search"
-      placeholder="Search fruits, milk, snacks..."
-      aria-label="Search groceries"
-      value={search}
-      onChange={(event) => setSearch(event.target.value)}
-    />
+          <input
+            type="search"
+            placeholder="Search fruits, milk, snacks..."
+            aria-label="Search groceries"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
 
-    <button
-      className="search-submit-button"
-      type="submit"
-      aria-label="Search products"
-    >
-      Search
-    </button>
-  </form>
+          <button
+            className="search-submit-button"
+            type="submit"
+            aria-label="Search products"
+          >
+            Search
+          </button>
+        </form>
 
-  {/* Account */}
-  <div className="header-account-wrap">
-    <button
-      className="account-button"
-      type="button"
-      aria-label="Your account"
-      aria-expanded={accountMenuOpen}
-      onClick={() => {
-        setAccountMenuOpen((previous) => !previous);
-        setAuthError("");
-      }}
-    >
-      <span className="account-avatar">
-        {user?.displayName?.charAt(0)?.toUpperCase() || "A"}
-      </span>
+        {/* Account */}
+        <div className="header-account-wrap">
+          <button
+            className="account-button"
+            type="button"
+            aria-label="Your account"
+            aria-expanded={accountMenuOpen}
+            onClick={() => {
+              setAccountMenuOpen((previous) => !previous);
+              setAuthError("");
+            }}
+          >
+            <span className="account-avatar">
+              {user?.displayName?.charAt(0)?.toUpperCase() || "A"}
+            </span>
 
-      <span className="account-label">
-        {user
-          ? user.displayName?.split(" ")[0] || "Account"
-          : "Sign in"}
-      </span>
+            <span className="account-label">
+              {user
+                ? user.displayName?.split(" ")[0] || "Account"
+                : "Sign in"}
+            </span>
 
-      <Icon name="chevron" size={15} />
-    </button>
+            <Icon name="chevron" size={15} />
+          </button>
 
-    {accountMenuOpen && (
-      <div className="account-dropdown" role="dialog" aria-label="Account menu">
-        {user ? (
-          <>
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                alignItems: "center",
-              }}
-            >
-              {user.photoURL ? (
-                <Image
-                  src={user.photoURL}
-                  alt=""
-                  width={42}
-                  height={42}
-                  referrerPolicy="no-referrer"
-                  style={{
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                <span className="account-avatar">
-                  {user.displayName?.charAt(0)?.toUpperCase() || "A"}
-                </span>
-              )}
-
-              <div style={{ minWidth: 0 }}>
-                <strong style={{ display: "block" }}>
-                  {user.displayName || "DailyCart customer"}
-                </strong>
-                <span
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    color: "#777",
-                    overflowWrap: "anywhere",
-                  }}
-                >
-                  {user.email}
-                </span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                marginTop: "14px",
-                padding: "11px",
-                borderRadius: "10px",
-                background: "#f5f8f3",
-                fontSize: "12px",
-                lineHeight: 1.5,
-              }}
-            >
-              <strong style={{ display: "block", marginBottom: "4px" }}>
-                Delivery address
-              </strong>
-              <span style={{ color: "#626b61", display: "block" }}>
-                {profileLoading
-                  ? "Loading your saved address..."
-                  : customerProfile?.address
-                    ? `${customerProfile.address}${
-                        customerProfile.pincode
-                          ? `, ${customerProfile.pincode}`
-                          : ""
-                      }`
-                    : "No delivery address saved yet."}
-              </span>
-
-              {customerProfile?.location?.latitude != null &&
-                customerProfile?.location?.longitude != null && (
-                  <a
-                    href={`https://www.google.com/maps?q=${customerProfile.location.latitude},${customerProfile.location.longitude}`}
-                    target="_blank"
-                    rel="noreferrer"
+          {accountMenuOpen && (
+            <div className="account-dropdown" role="dialog" aria-label="Account menu">
+              {user ? (
+                <>
+                  <div
                     style={{
-                      display: "inline-block",
-                      marginTop: "7px",
-                      color: "#278044",
-                      fontWeight: 700,
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "center",
                     }}
                   >
-                    View saved GPS location ↗
-                  </a>
-                )}
+                    {user.photoURL ? (
+                      <Image
+                        src={user.photoURL}
+                        alt=""
+                        width={42}
+                        height={42}
+                        referrerPolicy="no-referrer"
+                        style={{
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <span className="account-avatar">
+                        {user.displayName?.charAt(0)?.toUpperCase() || "A"}
+                      </span>
+                    )}
 
-              <Link
-                href="/complete-profile"
-                onClick={() => setAccountMenuOpen(false)}
-                style={{
-                  display: "block",
-                  marginTop: "8px",
-                  color: "#278044",
-                  fontWeight: 700,
-                }}
-              >
-                Update address and profile →
-              </Link>
+                    <div style={{ minWidth: 0 }}>
+                      <strong style={{ display: "block" }}>
+                        {user.displayName || "DailyCart customer"}
+                      </strong>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: "12px",
+                          color: "#777",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {user.email}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: "14px",
+                      padding: "11px",
+                      borderRadius: "10px",
+                      background: "#f5f8f3",
+                      fontSize: "12px",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <strong style={{ display: "block", marginBottom: "4px" }}>
+                      Delivery address
+                    </strong>
+                    <span style={{ color: "#626b61", display: "block" }}>
+                      {profileLoading
+                        ? "Loading your saved address..."
+                        : customerProfile?.address
+                          ? `${customerProfile.address}${customerProfile.pincode
+                            ? `, ${customerProfile.pincode}`
+                            : ""
+                          }`
+                          : "No delivery address saved yet."}
+                    </span>
+
+                    {customerProfile?.location?.latitude != null &&
+                      customerProfile?.location?.longitude != null && (
+                        <a
+                          href={`https://www.google.com/maps?q=${customerProfile.location.latitude},${customerProfile.location.longitude}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: "inline-block",
+                            marginTop: "7px",
+                            color: "#278044",
+                            fontWeight: 700,
+                          }}
+                        >
+                          View saved GPS location ↗
+                        </a>
+                      )}
+
+                    <Link
+                      href="/complete-profile"
+                      onClick={() => setAccountMenuOpen(false)}
+                      style={{
+                        display: "block",
+                        marginTop: "8px",
+                        color: "#278044",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Update address and profile →
+                    </Link>
+                  </div>
+
+                  <Link
+                    href="/orders"
+                    onClick={() => setAccountMenuOpen(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      width: "100%",
+                      padding: "12px",
+                      marginTop: "12px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "10px",
+                      color: "#202820",
+                      fontSize: "14px",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <span style={{ fontSize: "19px" }}>📦</span>
+                    My Orders
+                    <span style={{ marginLeft: "auto", color: "#278044" }}>→</span>
+                  </Link>
+
+                  <hr style={{ margin: "16px 0", borderColor: "#eee" }} />
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    style={{
+                      width: "100%",
+                      padding: "11px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "9px",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Sign out
+                  </button>
+
+                  {!isAdmin && !isDeliveryBoy && (
+                    <DeleteAccountButton className="delete-account-button" />
+                  )}
+                </>
+              ) : (
+                <>
+                  <strong style={{ display: "block", marginBottom: "6px" }}>
+                    Welcome to DailyCart!
+                  </strong>
+                  <p style={{ fontSize: "13px", color: "#777", marginBottom: "15px" }}>
+                    Sign in to manage your account and delivery addresses.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    disabled={authLoading}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "9px",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Continue with Google
+                  </button>
+                </>
+              )}
+
+              {authError && (
+                <p
+                  role="alert"
+                  style={{ color: "#dc2626", fontSize: "12px", marginTop: "12px" }}
+                >
+                  {authError}
+                </p>
+              )}
             </div>
+          )}
+        </div>
 
-            <Link
-              href="/orders"
-              onClick={() => setAccountMenuOpen(false)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                width: "100%",
-                padding: "12px",
-                marginTop: "12px",
-                border: "1px solid #e5e7eb",
-                borderRadius: "10px",
-                color: "#202820",
-                fontSize: "14px",
-                fontWeight: 700,
-                textDecoration: "none",
-              }}
-            >
-              <span style={{ fontSize: "19px" }}>📦</span>
-              My Orders
-              <span style={{ marginLeft: "auto", color: "#278044" }}>→</span>
-            </Link>
+        {/* Cart */}
+        <Link
+          href="/cart"
+          className="header-cart"
+          aria-label={`My Cart, ${itemCount} items`}
+        >
+          <Icon name="cart" size={20} />
+          <span className="cart-label">My Cart</span>
 
-            <hr style={{ margin: "16px 0", borderColor: "#eee" }} />
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              style={{
-                width: "100%",
-                padding: "11px",
-                border: "1px solid #e5e7eb",
-                borderRadius: "9px",
-                background: "#fff",
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
-            >
-              Sign out
-            </button>
-
-            {!isAdmin && !isDeliveryBoy && (
-              <DeleteAccountButton className="delete-account-button" />
-            )}
-          </>
-        ) : (
-          <>
-            <strong style={{ display: "block", marginBottom: "6px" }}>
-              Welcome to DailyCart!
-            </strong>
-            <p style={{ fontSize: "13px", color: "#777", marginBottom: "15px" }}>
-              Sign in to manage your account and delivery addresses.
-            </p>
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={authLoading}
-              style={{
-                width: "100%",
-                padding: "12px",
-                border: "1px solid #e5e7eb",
-                borderRadius: "9px",
-                background: "#fff",
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
-            >
-              Continue with Google
-            </button>
-          </>
-        )}
-
-        {authError && (
-          <p
-            role="alert"
-            style={{ color: "#dc2626", fontSize: "12px", marginTop: "12px" }}
-          >
-            {authError}
-          </p>
-        )}
-      </div>
-    )}
-  </div>
-
-  {/* Cart */}
-  <Link
-    href="/cart"
-    className="header-cart"
-    aria-label={`My Cart, ${itemCount} items`}
-  >
-    <Icon name="cart" size={20} />
-    <span className="cart-label">My Cart</span>
-
-    {itemCount > 0 && (
-      <span className="header-cart-count">{itemCount}</span>
-    )}
-  </Link>
-</header>
+          {itemCount > 0 && (
+            <span className="header-cart-count">{itemCount}</span>
+          )}
+        </Link>
+      </header>
 
 
       <div className="header-rule" />
 
       <div className="page-shell" id="top">
-        <section
-          className="hero"
-          aria-label="DailyCart delivery offer"
-        >
-          <div className="hero-copy">
-<span className="hero-kicker">
-  <span className="live-dot" />
-  CHABUA TOWN · WITHIN 10 KM
-</span>
-
-            <h1>
-              Good food.
-              <br />
-              Great mood.
-              <br />
-              <em>10 minutes.</em>
+        <section className="dashboard-welcome" aria-labelledby="welcome-title">
+          <div className="dashboard-welcome-copy">
+            <p className="dashboard-eyebrow">
+              {user ? "YOUR DAILYCART DASHBOARD" : "WELCOME TO DAILYCART"}
+            </p>
+            <h1 id="welcome-title">
+              {user
+                ? `Good to see you${customerFirstName ? `, ${customerFirstName}` : ""}.`
+                : "Shop fresh, every day."}
             </h1>
+            <p>Everyday groceries and essentials, made easy.</p>
+          </div>
 
-<p>
-  Fresh finds and everyday favourites, delivered across
-  Chabua Town within a 10 km service radius.
-</p>
+          <Link
+            href={user ? "/profile" : "/login"}
+            className="dashboard-address"
+            aria-label={
+              user
+                ? "View your saved delivery address"
+                : "Sign in to add a delivery address"
+            }
+          >
+            <span className="dashboard-address-icon">
+              <Icon name="pin" size={19} />
+            </span>
+            <span className="dashboard-address-copy">
+              <span>Delivering to</span>
+              <strong>
+                {!user
+                  ? "Set your address"
+                  : profileLoading
+                    ? "Loading saved address…"
+                    : customerProfile?.address
+                      ? `${customerProfile.address}${
+                          customerProfile.pincode
+                            ? `, ${customerProfile.pincode}`
+                            : ""
+                        }`
+                      : "Add your delivery address"}
+              </strong>
+            </span>
+            <span className="dashboard-address-arrow" aria-hidden="true">
+              <Icon name="arrow" size={16} />
+            </span>
+          </Link>
+        </section>
 
+        <section className="dashboard-promo" aria-labelledby="promo-title">
+          <Image
+            src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1500&q=90"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 700px) 100vw, 1180px"
+            style={{
+              objectFit: "cover",
+              objectPosition: "center 52%",
+            }}
+          />
+          <div className="dashboard-promo-shade" />
+          <div className="dashboard-promo-copy">
+            <span>FRESH PICKS · CHABUA TOWN</span>
+            <h2 id="promo-title">Good food, right around the corner.</h2>
+            <p>Fresh finds for your everyday table, delivered with care.</p>
             <button
-              className="hero-button"
+              className="dashboard-promo-button"
               type="button"
               onClick={scrollToProducts}
             >
-              Shop the good stuff
-              <Icon name="arrow" size={18} />
+              Shop today&apos;s picks
+              <Icon name="arrow" size={17} />
             </button>
-
-            <div className="hero-footnote">
-              <span>✳</span>
-              Thoughtfully picked. Happily delivered.
-            </div>
           </div>
-
-          <div className="hero-photo">
-            <Image
-              src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1500&q=90"
-              alt="A colourful market display of fresh fruits and vegetables"
-              fill
-              preload
-              sizes="(max-width: 700px) 100vw, 58vw"
-              style={{
-                objectFit: "cover",
-                objectPosition: "center 52%",
-              }}
-            />
-
-            <div className="hero-photo-tag">
-              <span>✦</span>
-              <span>
-                Freshness
-                <br />
-                <strong>on the way</strong>
-              </span>
-            </div>
-          </div>
+          <span className="dashboard-promo-stamp">Freshness, delivered</span>
         </section>
 
         <section
-          className="promise-row hidden sm:flex"
-          aria-label="Delivery highlights"
+          className="dashboard-benefits"
+          aria-label="DailyCart benefits"
         >
-          <div className="promise">
-            <span className="promise-icon promise-green">
-              <Icon name="clock" size={18} />
-            </span>
-            <span>
-<strong>Under 10 km delivery</strong>
-<small>Serving Chabua Town and nearby areas</small>
-            </span>
-          </div>
-
-          <span className="promise-divider" />
-
-          <div className="promise">
-            <span className="promise-icon promise-yellow">
-              ✳
-            </span>
-            <span>
-              <strong>Freshness first</strong>
-              <small>Good stuff, every time</small>
-            </span>
-          </div>
-
-          <span className="promise-divider" />
-
-          <div className="promise">
-            <span className="promise-icon promise-coral">
-              ♡
-            </span>
-            <span>
-              <strong>Free delivery</strong>
-              <small>On orders over ₹299</small>
-            </span>
-          </div>
-
-          <div className="promise-note">
-            Your local good-food people <span>↗</span>
-          </div>
+          <span><Icon name="clock" size={15} /> Under 10 km delivery</span>
+          <span><Icon name="grid" size={15} /> Fresh everyday picks</span>
+          <span>Free delivery over ₹299</span>
         </section>
+
+        <nav className="dashboard-quick-links" aria-label="Customer shortcuts">
+          <Link href="#products" className="dashboard-shortcut">
+            <span className="dashboard-shortcut-icon">
+              <Icon name="cart" size={20} />
+            </span>
+            <span>
+              <strong>Shop groceries</strong>
+              <small>Browse everyday essentials</small>
+            </span>
+            <Icon name="arrow" size={16} />
+          </Link>
+          <Link href="#categories" className="dashboard-shortcut">
+            <span className="dashboard-shortcut-icon">
+              <Icon name="grid" size={20} />
+            </span>
+            <span>
+              <strong>Categories</strong>
+              <small>Find your favourites</small>
+            </span>
+            <Icon name="arrow" size={16} />
+          </Link>
+          <Link href="/orders" className="dashboard-shortcut">
+            <span className="dashboard-shortcut-icon">
+              <Icon name="package" size={20} />
+            </span>
+            <span>
+              <strong>My orders</strong>
+              <small>Track your deliveries</small>
+            </span>
+            <Icon name="arrow" size={16} />
+          </Link>
+          <Link href="/profile" className="dashboard-shortcut">
+            <span className="dashboard-shortcut-icon">
+              <Icon name="pin" size={20} />
+            </span>
+            <span>
+              <strong>My account</strong>
+              <small>Profile &amp; address</small>
+            </span>
+            <Icon name="arrow" size={16} />
+          </Link>
+        </nav>
+
+        {isCustomer && (
+          <section className="dashboard-recent-orders" aria-labelledby="recent-orders-title">
+            <div className="dashboard-section-heading">
+              <div>
+                <p className="dashboard-eyebrow">YOUR SHOPPING</p>
+                <h2 id="recent-orders-title">Recent orders</h2>
+              </div>
+              <Link href="/orders">View all orders <span aria-hidden="true">→</span></Link>
+            </div>
+
+            {recentOrdersLoading && (
+              <p className="dashboard-orders-message" role="status">
+                Loading your recent orders…
+              </p>
+            )}
+
+            {recentOrdersError && (
+              <div className="dashboard-orders-message is-error" role="alert">
+                <span>{recentOrdersError}</span>
+                <Link href="/orders">Open My Orders</Link>
+              </div>
+            )}
+
+            {!recentOrdersLoading &&
+              !recentOrdersError &&
+              recentOrders.length === 0 && (
+                <div className="dashboard-orders-empty">
+                  <p>Your recent orders will appear here.</p>
+                  <Link href="#products">Start shopping <span aria-hidden="true">→</span></Link>
+                </div>
+              )}
+
+            {!recentOrdersLoading && !recentOrdersError && recentOrders.length > 0 && (
+              <div className="dashboard-order-list">
+                {recentOrders.map((order) => {
+                  const status = String(order.orderStatus || "Processing")
+                    .replaceAll("_", " ")
+                    .replaceAll("-", " ");
+                  const itemCountForOrder = Array.isArray(order.items)
+                    ? order.items.length
+                    : 0;
+                  const orderTotal = Number(order.pricing?.total || 0);
+
+                  return (
+                    <article className="dashboard-order-card" key={order.id}>
+                      <div className="dashboard-order-main">
+                        <span className="dashboard-order-icon" aria-hidden="true">
+                          <Icon name="package" size={19} />
+                        </span>
+                        <div className="dashboard-order-copy">
+                          <strong>Order {order.orderId || order.id}</strong>
+                          <span>
+                            {formatOrderDate(order.createdAt)} ·{" "}
+                            {itemCountForOrder}{" "}
+                            {itemCountForOrder === 1 ? "item" : "items"}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="dashboard-order-status">{status}</span>
+                      <strong className="dashboard-order-total">
+                        ₹{orderTotal.toLocaleString("en-IN")}
+                      </strong>
+                      <Link
+                        href={`/track-order/${encodeURIComponent(order.id)}`}
+                        className="dashboard-order-track"
+                      >
+                        Track order <span aria-hidden="true">→</span>
+                      </Link>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
 
         <section
           className="category-section"
@@ -775,11 +967,10 @@ export default function Home() {
           >
             {categories.map((category) => (
               <button
-                className={`category-item${
-                  activeCategory === category.name
+                className={`category-item${activeCategory === category.name
                     ? " is-active"
                     : ""
-                }`}
+                  }`}
                 key={category.id}
                 type="button"
                 role="tab"

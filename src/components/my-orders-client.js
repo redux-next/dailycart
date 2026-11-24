@@ -176,7 +176,7 @@ export default function MyOrdersClient() {
   if (!user) return null;
 
   return (
-    <main className="min-h-screen bg-[#f7f8f5]">
+    <main className="min-h-screen bg-[#f6f8f4]">
       <div className="max-w-5xl mx-auto px-3 py-5 sm:px-4 sm:py-12">
 
         {/* Page heading */}
@@ -197,7 +197,7 @@ export default function MyOrdersClient() {
 
           <Link
             href="/"
-            className="shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white border border-gray-200 text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="shrink-0 min-h-11 inline-flex items-center justify-center rounded-xl bg-white border border-gray-200 px-3 py-2 text-xs sm:px-4 sm:text-sm font-semibold text-gray-700 transition hover:border-green-200 hover:bg-green-50"
           >
             Continue shopping
           </Link>
@@ -210,7 +210,7 @@ export default function MyOrdersClient() {
         )}
 
         {!error && orders.length === 0 && (
-          <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-3xl p-6 sm:p-10 text-center">
+          <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-3xl p-6 shadow-sm sm:p-10 text-center">
             <div className="text-4xl sm:text-5xl mb-3 sm:mb-5">
               🛍️
             </div>
@@ -225,7 +225,7 @@ export default function MyOrdersClient() {
 
             <Link
               href="/"
-              className="inline-block mt-4 sm:mt-6 bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl"
+              className="inline-flex min-h-11 items-center justify-center mt-4 sm:mt-6 bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl transition"
             >
               Start shopping
             </Link>
@@ -258,7 +258,7 @@ export default function MyOrdersClient() {
             return (
               <article
                 key={order.id}
-                className="bg-white border border-gray-100 rounded-xl sm:rounded-2xl shadow-sm overflow-hidden"
+                className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden transition-shadow hover:shadow-md sm:rounded-3xl"
               >
                 <div className="p-3 sm:p-6">
 
@@ -349,7 +349,7 @@ export default function MyOrdersClient() {
                   <div className="border-t border-gray-100 my-3 sm:my-5" />
 
                   {/* Payment and address */}
-                  <div className="grid grid-cols-2 gap-3 sm:gap-5">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
                     <div className="min-w-0">
                       <p className="text-[9px] sm:text-xs font-bold text-gray-500 uppercase tracking-wide">
                         Payment
@@ -387,7 +387,7 @@ export default function MyOrdersClient() {
                   </div>
 
                   {/* Bill summary */}
-                  <div className="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4 mt-3 sm:mt-5">
+                  <div className="bg-[#f7faf6] border border-gray-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 mt-4 sm:mt-5">
                     <div className="flex justify-between text-xs sm:text-sm">
                       <span className="text-gray-500">
                         Subtotal
@@ -432,7 +432,7 @@ export default function MyOrdersClient() {
                   {/* Track order */}
                   <Link
                     href={`/track-order/${encodeURIComponent(order.id)}`}
-                    className={`flex items-center justify-center w-full mt-3 text-xs sm:text-sm font-bold rounded-xl py-3 transition ${
+                    className={`flex min-h-12 items-center justify-center w-full mt-4 text-xs sm:text-sm font-bold rounded-xl py-3 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 ${
                       delivered
                         ? "bg-green-50 hover:bg-green-100 text-green-800 border border-green-200"
                         : "bg-green-600 hover:bg-green-700 text-white"
