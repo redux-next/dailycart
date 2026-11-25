@@ -660,6 +660,32 @@ export default function Home() {
                     <span style={{ marginLeft: "auto", color: "#278044" }}>→</span>
                   </Link>
 
+                  {isAdmin && (
+                    <Link
+                      href="/admin/products"
+                      onClick={() => setAccountMenuOpen(false)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        width: "100%",
+                        padding: "12px",
+                        marginTop: "8px",
+                        border: "1px solid #bbf7d0",
+                        borderRadius: "10px",
+                        background: "#f0fdf4",
+                        color: "#166534",
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                      }}
+                    >
+                      <span style={{ fontSize: "19px" }}>▦</span>
+                      Manage products
+                      <span style={{ marginLeft: "auto" }}>→</span>
+                    </Link>
+                  )}
+
                   <hr style={{ margin: "16px 0", borderColor: "#eee" }} />
 
                   <button

@@ -12,30 +12,43 @@ export default function LoadingImage({
   className = "",
   objectFit = "cover",
 }) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [imageState, setImageState] = useState({
+    source: src,
+    isLoaded: false,
+    hasError: false,
+  });
+  const validSource =
+    typeof src === "string" && (src.startsWith("https://") || src.startsWith("/"));
+  const isLoaded = imageState.source === src && imageState.isLoaded;
+  const hasError = imageState.source === src && imageState.hasError;
 
   return (
     <>
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes={sizes}
-        preload={priority}
-        loading={priority ? undefined : "lazy"}
-        className={`loading-image ${isLoaded ? "is-loaded" : ""} ${className}`.trim()}
-        style={{ objectFit }}
-        onLoad={() => setIsLoaded(true)}
-        onError={() => setHasError(true)}
-      />
+      {validSource && !hasError && (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes={sizes}
+          preload={priority}
+          loading={priority ? undefined : "lazy"}
+          className={`loading-image ${isLoaded ? "is-loaded" : ""} ${className}`.trim()}
+          style={{ objectFit }}
+          onLoad={() =>
+            setImageState({ source: src, isLoaded: true, hasError: false })
+          }
+          onError={() =>
+            setImageState({ source: src, isLoaded: false, hasError: true })
+          }
+        />
+      )}
 
-      {!isLoaded && (
+      {(!validSource || hasError || !isLoaded) && (
         <span
           className={`image-loading-placeholder ${hasError ? "has-error" : ""}`}
           aria-hidden="true"
         >
-          {hasError ? (
+          {!validSource || hasError ? (
             "Image unavailable"
           ) : (
             <span className="image-loading-shimmer" />

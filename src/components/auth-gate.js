@@ -9,7 +9,7 @@ import { useAuth } from "./auth-provider";
 import StorefrontLoading from "./storefront-loading";
 
 export default function AuthGate({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -56,6 +56,18 @@ export default function AuthGate({ children }) {
           }
         }
 
+        return;
+      }
+
+      if (pathname.startsWith("/admin")) {
+        if (isAdmin) {
+          if (active) {
+            setCheckingProfile(false);
+            setAllowed(true);
+          }
+        } else {
+          router.replace("/");
+        }
         return;
       }
 
@@ -118,7 +130,7 @@ export default function AuthGate({ children }) {
     return () => {
       active = false;
     };
-  }, [user, loading, pathname, router, isPublicRoute]);
+  }, [user, loading, isAdmin, pathname, router, isPublicRoute]);
 
   if (loading || checkingProfile || !allowed) {
     if (pathname === "/") {

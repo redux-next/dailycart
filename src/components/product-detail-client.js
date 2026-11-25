@@ -8,9 +8,11 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import ProductActions from "./product-actions";
 import LoadingImage from "./loading-image";
+import { getProductImage } from "../lib/product-image";
 
 export default function ProductDetailClient({ productId }) {
   const [product, setProduct] = useState(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -40,6 +42,7 @@ export default function ProductDetailClient({ productId }) {
 
         setProduct({
           ...snapshot.data(),
+          image: getProductImage(snapshot.data()),
           id: snapshot.data().id ?? productId,
         });
       } catch (err) {
@@ -95,6 +98,29 @@ export default function ProductDetailClient({ productId }) {
     );
   }
 
+  const productImages = Array.isArray(product.images)
+    ? product.images.filter(
+        (image) => typeof image?.url === "string" && image.url
+      )
+    : [];
+  if (
+    product.image &&
+    !productImages.some((image) => image.url === product.image)
+  ) {
+    productImages.unshift({
+      url: product.image,
+      isPrimary: true,
+      position: 0,
+    });
+  }
+  const primaryImage =
+    productImages.find((image) => image.url === product.image) ||
+    productImages.find((image) => image.isPrimary) ||
+    productImages[0];
+  const activeImage =
+    productImages.find((image) => image.url === selectedImageUrl) ||
+    primaryImage;
+
   return (
     <main className="product-page">
       <nav className="product-breadcrumbs" aria-label="Breadcrumb">
@@ -110,18 +136,44 @@ export default function ProductDetailClient({ productId }) {
       </nav>
 
       <article className="product-detail-card">
-        <div className="product-detail-image">
-          <LoadingImage
-            src={product.image}
-            alt={product.name}
-            priority
-            sizes="(max-width: 700px) 100vw, 50vw"
-          />
+        <div className="product-detail-media">
+          <div className="product-detail-image">
+            <LoadingImage
+              src={activeImage?.url || product.image}
+              alt={product.name}
+              priority
+              sizes="(max-width: 700px) 100vw, 50vw"
+            />
 
-          {product.badge && (
-            <span className="product-badge">
-              {product.badge}
-            </span>
+            {product.badge && (
+              <span className="product-badge">
+                {product.badge}
+              </span>
+            )}
+          </div>
+
+          {productImages.length > 1 && (
+            <div className="product-image-thumbnails" aria-label="More product images">
+              {productImages.map((image, index) => (
+                <button
+                  type="button"
+                  key={`${image.publicId || image.url}-${index}`}
+                  onClick={() => setSelectedImageUrl(image.url)}
+                  aria-label={`View product image ${index + 1}`}
+                  aria-pressed={activeImage?.url === image.url}
+                  className={`product-image-thumbnail ${
+                    activeImage?.url === image.url ? "is-selected" : ""
+                  }`}
+                >
+                  <LoadingImage
+                    src={image.url}
+                    alt=""
+                    sizes="72px"
+                    objectFit="cover"
+                  />
+                </button>
+              ))}
+            </div>
           )}
         </div>
 

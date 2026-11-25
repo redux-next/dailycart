@@ -8,6 +8,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { getProductImage } from "../lib/product-image";
 
 export function useCatalog() {
   const [products, setProducts] = useState([]);
@@ -31,7 +32,10 @@ export function useCatalog() {
         ]);
 
         const loadedProducts = productSnapshot.docs
-          .map((item) => item.data())
+          .map((item) => {
+            const product = item.data();
+            return { ...product, image: getProductImage(product) };
+          })
           .sort((a, b) => a.id - b.id);
 
         const loadedCategories = categorySnapshot.docs.map((item) => ({

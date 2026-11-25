@@ -1214,6 +1214,32 @@ input:focus-visible {
   position: relative;
 }
 
+.product-detail-media {
+  min-width: 0;
+  background: #fff;
+}
+
+.product-image-thumbnails {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px;
+}
+
+.product-image-thumbnail {
+  background: #f3f5f1;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  flex: 0 0 64px;
+  height: 64px;
+  overflow: hidden;
+  position: relative;
+}
+
+.product-image-thumbnail.is-selected {
+  border-color: var(--green);
+}
+
 .product-detail-image .product-badge {
   font-size: 10px;
   left: 20px;
