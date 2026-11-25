@@ -1,7 +1,7 @@
 # DailyCart — Online Grocery Delivery Platform
 
 <p align="center">
-  <img src="public/dailycart-logo.png" alt="DailyCart Logo" width="220" />
+  <img src="public/dailycart_login_logo.png" alt="DailyCart Logo" width="220" />
 </p>
 
 <p align="center">
